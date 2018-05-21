@@ -2,14 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 
-class Square extends React.Component {
-  render() {
-    return (
-      <button class="square" onClick={this.props.onClick}>
-        {this.props.value}
-      </button>
-    );
-  }
+function Square(props) {
+  return (
+    <button class="square" onClick={props.onClick}>
+      {props.value}
+    </button>
+  );
 }
 
 class Board extends React.Component {
@@ -53,11 +51,18 @@ class Game extends React.Component {
           squares: Array(9).fill(null)
         }
       ],
+      stepNumber: 0,
       xIsNext: true
     };
   }
+  jumpTo(step){
+    this.setState({
+      stepNumber:step,
+      xIsNext: step % 2 === 0
+    });
+  }
   handleClick(i) {
-    const history = this.state.history;
+    const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const current = history[history.length - 1];
     const winner = calculateWinner(current.squares);
     if (winner || current.squares[i]) {
@@ -67,13 +72,22 @@ class Game extends React.Component {
     squares[i] = this.state.xIsNext ? "X" : "O";
     this.setState({
       history: history.concat([{ squares: squares }]),
+      stepNumber: history.length,
       xIsNext: !this.state.xIsNext
     });
   }
   render() {
     const history = this.state.history;
-    const current = history[history.length - 1];
+    const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
+    const moves = history.map((state, move) => {
+      const desc = move ? "Go to move " + move : "Go to game start.";
+      return (
+      <li key={move}>
+        <button onClick={() => this.jumpTo(move)}>{desc}</button>
+      </li>
+      );
+    });
     const status = this.state.xIsNext ? "Next player: X" : "Next player: O";
     let message = winner ? winner + " has won the game." : status;
     return (
@@ -83,12 +97,19 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{message}</div>
-          <ol>{/* TODO */}</ol>
+          <ol>{moves}</ol>
         </div>
       </div>
     );
   }
 }
+
+// ========================================
+
+ReactDOM.render(<Game />, document.getElementById("root"));
+
+// ========================================
+
 function calculateWinner(squares) {
   let winningCombination = [
     [0, 1, 2],
@@ -108,6 +129,3 @@ function calculateWinner(squares) {
   }
   return null;
 }
-// ========================================
-
-ReactDOM.render(<Game />, document.getElementById("root"));
